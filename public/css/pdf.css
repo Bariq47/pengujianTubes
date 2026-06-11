@@ -1,0 +1,9 @@
+.card-title {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+.image-title {
+    width: 120px;
+}
