@@ -16,6 +16,11 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             UserSeeder::class,
             ProfileSeeder::class,
+            JenisMobilSeeder::class,
+            MerekMobilSeeder::class,
+            KantorSeeder::class,
+            SupirSeeder::class,
+            MobilSeeder::class,
         ]);
     }
 }

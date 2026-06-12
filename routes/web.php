@@ -28,8 +28,9 @@ use App\Http\Controllers\OrderController;
 Route::get('orders/export', [OrderController::class, 'export'])->name('orders.export');
 
 
+Route::get('/', HomeIndex::class)->name('home');
+
 Route::middleware('guest')->group(function () {
-    Route::get('/', HomeIndex::class)->name('home');
     Route::prefix('auth')->group(function () {
         Route::get('/signin', SigninIndex::class)->name('auth-signin');
         Route::get('/signup', SignupIndex::class)->name('auth-signup');

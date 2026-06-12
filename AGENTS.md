@@ -4,64 +4,78 @@
 - **Laravel 10** + PHP 8.1+ (MySQL `eratrans`)
 - **Livewire 3** full-page components (SPA via `wire:navigate`)
 - Bootstrap 5 + SASS + Vite (`npm run dev` / `npm run build`)
-- Midtrans payment gateway, DomPDF (invoices), Maatwebsite/Laravel-Excel
-- Docker: PHP 8.3 FPM + nginx + MySQL 8.0 (`docker-compose up`)
+- Midtrans (WhatsApp redirect only — no Snap UI), DomPDF, Maatwebsite/Laravel-Excel
+- Docker: PHP 8.3 FPM + nginx + MySQL 8.0
 
 ## Roles & Auth
 - `role_id = 1` → admin, `role_id = 2` → member
-- Middleware: `admin-only`, `member-only` (`app/Http/Middleware/`)
-- Auth routes via `laravel/ui` scaffold, custom Livewire signin/signup
+- Middleware aliases (`app/Http/Kernel.php`): `admin-only`, `member-only`
+- Routes: `guest` → `auth` → `admin-only` (prefix `admin/`) or `member-only` (prefix `member/`)
+- Livewire layouts: `layouts.guest-layout` (auth), `layouts.home-layout` (home), `layouts.app-layout` (admin, member, profile)
+- Login redirect: no profile → `profile-create`; role_id=1 → `admin-dashboard`; else → `member-dashboard`
 
 ## Key structure
-| Directory | Purpose |
-|---|---|
-| `app/Livewire/` | Full-page Livewire components by area (Admin, Member, Auth, Home, Profile) |
-| `app/Http/Controllers/` | Controllers: `DomPdfController`, `MidtransController`, `OrderController`, `PaymentController` |
-| `app/Exports/OrdersExport.php` | Excel export via Maatwebsite |
-| `routes/web.php` | All web routes; uses `admin-only` and `member-only` middleware groups |
-| `routes/api.php` | Midtrans callback `POST /api/pesanan/callback` (no auth) |
-| `resources/views/livewire/` | Livewire Blade views |
-| `resources/views/layouts/` | Layouts; Livewire uses `#[Layout('layouts.app-layout')]` |
-| `database/migrations/` | 19 migration files |
+- `app/Livewire/` — 19 components: Admin(9), Member(5), Auth(2), Home(1), Profile(2)
+- `app/Http/Controllers/` — `DomPdfController` (invoice PDF), `MidtransController` (Midtrans callback), `OrderController` (Excel export), `PaymentController` (WhatsApp + confirm)
+- `app/Models/` — 11 models (JenisMobil, Kantor, MerekMobil, Mobil, Pengembalian, Pesanan, Profile, Role, Supir, TransaksiPembayaran, User)
+- `routes/web.php` — `GET /orders/export` is **public** (no middleware); duplicate `redirect-to-payment` route defined twice
+- `routes/api.php` — Midtrans callback `POST /api/pesanan/callback` (no auth)
+- `resources/views/livewire/` — admin dirs use **kebab-case** (`jenis-mobil/`); member dirs use single words (`pesanan/`)
+- `database/migrations/` — 19 migrations
+- `database/seeders/` — 8 data seeders + `DatabaseSeeder` orchestrator (order: Role → User → Profile → JenisMobil → MerekMobil → Kantor → Supir → Mobil)
+- Factories: only `UserFactory.php`
 
 ## Dev commands
-```bash
+```
 composer install
 npm install
-npm run dev          # Vite dev server
-npm run build        # Vite build
-php artisan serve    # Laravel dev server
+npm run dev             # Vite dev server
+npm run build           # Vite build
+php artisan serve       # Laravel dev server
+php artisan db:seed     # Seed DB (after migrate:fresh)
+php artisan migrate:fresh --seed
+php artisan storage:link    # Required for image uploads
+./vendor/bin/pint           # Only formatter (no php-cs-fixer)
 ```
 
 ## Testing
-```bash
-phpunit                      # All tests
-phpunit tests/Unit/ExampleTest.php
-phpunit tests/Feature/ExampleTest.php
 ```
-- phpunit.xml: test suites `Unit` and `Feature`; no DB configured by default (commented out in config)
-- PHP code style: `./vendor/bin/pint`
+./vendor/bin/phpunit                     # All tests
+./vendor/bin/phpunit tests/Unit/
+./vendor/bin/phpunit tests/Feature/
+./vendor/bin/phpunit --filter TestName
+```
+- Unit: `PHPUnit\Framework\TestCase` (no Laravel app boot)
+- Feature: `Tests\TestCase` (needs DB)
+- `phpunit.xml`: DB config **commented out** — feature tests need MySQL or uncomment sqlite lines
+- Only ExampleTest stubs exist (no real tests written)
 
 ## Payments
-- **WhatsApp redirect**: `PaymentController@redirectToPayment` sends user to WhatsApp (hardcoded number `6285731021898`)
-- **Midtrans callback**: `POST /api/pesanan/callback` updates `status_bayar` (paid/unpaid/expire)
-- **Admin confirm**: `/member/confirm-payment/{id}` marks `status_bayar = konfirmasi` and creates `Pengembalian` record
-- Config: `config/midtrans.php` reads `MIDTRANS_MERCHANT_ID`, `MIDTRANS_CLIENT_KEY`, `MIDTRANS_SERVER_KEY` from env
+- **WhatsApp redirect** (no Midtrans Snap): `PaymentController@redirectToPayment` hardcodes `6285731021898`
+- **Midtrans callback** (`POST /api/pesanan/callback`): updates `status_bayar`. Signature verification (`hash('sha512', ...)`) is **commented out**
+- **Admin confirm** (`/member/confirm-payment/{id}`): sets `status_bayar = konfirmasi`, creates `Pengembalian` (under member prefix but redirects to admin-pesanan)
+- **Invoice PDF** (`/member/export/pdf/{id}`): DomPdfController generates invoice PDF (member-only)
+- `config/midtrans.php` reads `MIDTRANS_MERCHANT_ID/CLIENT_KEY/SERVER_KEY` from env — **none set in `.env`**
 
-## Database
-- SQL dump: `eratrans.sql` at repo root
-- Seed order: `RoleSeeder` → `UserSeeder` → `ProfileSeeder`
-- Migrations: 19 files, all prefixed `2024_06_07`
+## Setup quirks
+- **No `.env.example`** — `.env` is git-tracked with committed `APP_KEY` and empty `DB_PASSWORD`
+- **Midtrans env vars missing** from `.env`
+- **`GET /orders/export`** is publicly accessible (no middleware) — OrderController exports all Pesanan to Excel
+- **`MemberOnly` middleware** (`app/Http/Middleware/MemberOnly.php`) has **empty if-block** — non-members silently pass through (no redirect)
+- **`AdminOnly` middleware** redirects back on mismatch
+- **No CI** — no `.github/` directory
 
 ## Docker deploy
-```bash
+```
 docker-compose up -d --build
 ```
 - `Dockerfile`: PHP 8.3 FPM + Node 20 + Composer; runs `composer install --no-dev`, `npm ci --omit=dev && npm run build`
-- Expects `nginx.conf` and `docker-entrypoint.sh` at root
-- MySQL exposed on host port `3307`
-- Payment env vars passed through: `MIDTRANS_MERCHANT_ID`, `MIDTRANS_CLIENT_KEY`, `MIDTRANS_SERVER_KEY`
+- Requires `nginx.conf` and `docker-entrypoint.sh` at repo root
+- `docker-entrypoint.sh`: `php artisan migrate --force`; caches config/route/view in production
+- **Build quirk**: `libicu-dev` required for `intl` PHP extension; missing it causes `docker-php-ext-install intl` to fail
+- **DB name mismatch**: docker-compose uses `DB_DATABASE=laravel` / `MYSQL_DATABASE=laravel`, local `.env` uses `eratrans`
+- MySQL host port: `3307`
 
-## Files an agent should not modify
-- `vendor/`, `node_modules/`, `.env`, `eratrans.sql` (dump file)
-- `public/build/` (Vite output, regenerated by `npm run build`)
+## Do not modify
+- `vendor/`, `node_modules/`, `.env`, `eratrans.sql`
+- `public/build/` (regenerated by `npm run build`)

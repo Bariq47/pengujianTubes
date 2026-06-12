@@ -9,6 +9,7 @@ RUN apt-get update && apt-get install -y \
     libjpeg-dev \
     libwebp-dev \
     libfreetype6-dev \
+    libicu-dev \
     libzip-dev \
     libonig-dev \
     libxml2-dev \
@@ -42,7 +43,7 @@ COPY . .
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
 # Build frontend assets
-RUN npm ci --omit=dev && npm run build && rm -rf node_modules
+RUN npm ci && npm run build && rm -rf node_modules
 
 # Permissions
 RUN chown -R www-data:www-data /var/www/html \
