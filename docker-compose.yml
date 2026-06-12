@@ -11,7 +11,7 @@ services:
       - APP_DEBUG=false
       - DB_HOST=db
       - DB_PORT=3306
-      - DB_DATABASE=laravel
+      - DB_DATABASE=eratrans
       - DB_USERNAME=laravel
       - DB_PASSWORD=secret
       - MIDTRANS_MERCHANT_ID=${MIDTRANS_MERCHANT_ID:-}
@@ -40,7 +40,7 @@ services:
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: secret123
-      MYSQL_DATABASE: laravel
+      MYSQL_DATABASE: eratrans
       MYSQL_USER: laravel
       MYSQL_PASSWORD: secret
     volumes:
