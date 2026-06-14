@@ -26,6 +26,8 @@ class UserSeeder extends Seeder
             ],
         ];
 
-        User::insert($data);
+        foreach ($data as $item) {
+            User::firstOrCreate(['email' => $item['email']], $item);
+        }
     }
 }

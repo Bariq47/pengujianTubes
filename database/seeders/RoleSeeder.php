@@ -18,6 +18,8 @@ class RoleSeeder extends Seeder
             ['role' => 'member']
         ];
 
-        Role::insert($data);
+        foreach ($data as $item) {
+            Role::firstOrCreate($item);
+        }
     }
 }

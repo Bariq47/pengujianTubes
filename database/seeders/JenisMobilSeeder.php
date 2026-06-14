@@ -17,6 +17,8 @@ class JenisMobilSeeder extends Seeder
             ['jenis_mobil' => 'Pickup'],
         ];
 
-        JenisMobil::insert($data);
+        foreach ($data as $item) {
+            JenisMobil::firstOrCreate($item);
+        }
     }
 }

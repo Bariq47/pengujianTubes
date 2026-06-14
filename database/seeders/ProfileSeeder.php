@@ -32,6 +32,8 @@ class ProfileSeeder extends Seeder
             ],
         ];
 
-        Profile::insert($data);
+        foreach ($data as $item) {
+            Profile::firstOrCreate(['user_id' => $item['user_id']], $item);
+        }
     }
 }

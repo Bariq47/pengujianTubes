@@ -24,6 +24,8 @@ class KantorSeeder extends Seeder
             ],
         ];
 
-        Kantor::insert($data);
+        foreach ($data as $item) {
+            Kantor::firstOrCreate(['nama' => $item['nama']], $item);
+        }
     }
 }

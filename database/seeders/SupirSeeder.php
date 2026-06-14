@@ -39,6 +39,8 @@ class SupirSeeder extends Seeder
             ],
         ];
 
-        Supir::insert($data);
+        foreach ($data as $item) {
+            Supir::firstOrCreate(['no_ktp' => $item['no_ktp']], $item);
+        }
     }
 }

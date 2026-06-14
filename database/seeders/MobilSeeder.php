@@ -92,6 +92,8 @@ class MobilSeeder extends Seeder
             ],
         ];
 
-        Mobil::insert($data);
+        foreach ($data as $item) {
+            Mobil::firstOrCreate(['no_polisi' => $item['no_polisi']], $item);
+        }
     }
 }

@@ -17,6 +17,8 @@ class MerekMobilSeeder extends Seeder
             ['merek_mobil' => 'Suzuki'],
         ];
 
-        MerekMobil::insert($data);
+        foreach ($data as $item) {
+            MerekMobil::firstOrCreate($item);
+        }
     }
 }
