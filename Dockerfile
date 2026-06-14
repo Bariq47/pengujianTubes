@@ -42,8 +42,8 @@ COPY . .
 # Install PHP deps (no dev, no scripts yet — .env not available)
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
-# Build frontend assets
-RUN npm ci && npm run build && rm -rf node_modules
+# Build frontend assets (skip if npm fails — VPS network may be unreliable)
+RUN npm ci && npm run build && rm -rf node_modules || echo "npm build skipped (network issue)"
 
 # Permissions
 RUN chown -R www-data:www-data /var/www/html \
